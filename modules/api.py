@@ -21,7 +21,7 @@ class tokens:
     accessTokenTimeout = 1800 # in seconds
 
 
-def initialize():
+def initialize(acctNumber=None):
 
     if len(universe.credentials.appKey) != 32 or len(universe.credentials.appSecret) != 16:
         universe.cTerm.error("No app key or app secret found, please add your app key in modules/universe.credentials.appKey")
@@ -43,8 +43,24 @@ def initialize():
     universe.cTerm.info("Filling account number and account hash...")
     resp = accounts.accountNumbers()
     if resp.ok:
-        universe.credentials.accountNumber = resp.json()[0].get('accountNumber', None)
-        universe.credentials.accountHash = resp.json()[0].get('hashValue', None)
+        if acctNumber:
+            match_found = False
+            for item in resp.json():
+                if item.get('accountNumber') == acctNumber:
+                    universe.credentials.accountNumber = acctNumber
+                    universe.credentials.accountHash = item.get('hashValue')
+                    match_found = True 
+                    break
+    
+            if not match_found: 
+                universe.credentials.accountNumber = None
+                universe.credentials.accountHash = None
+                print(f"Failed to fetch account number: {acctNumber}. No matching account was found.")
+        else:
+            universe.credentials.accountNumber = resp.json()[0].get('accountNumber')
+            universe.credentials.accountHash = resp.json()[0].get('hashValue')
+                    
+                    
     else:
         universe.cTerm.error("Could not get account numbers and account hash.")
     
